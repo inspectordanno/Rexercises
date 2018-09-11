@@ -1,0 +1,101 @@
+---
+title: "Chi-square, non-parametric statistics"
+output: 
+  html_notebook: 
+    theme: simplex
+---
+Statistics in the form of *counts* of different categories are tabulated in *contingency tables*. *Contingencies* : all the possible events that could happen. *Contingency tables* show how often they have actually happened in the sample. Chi-square test allows to evaluate the difference between what has happened and what was expected to happen assuming independence between the categories .
+
+
+Most simple version: in a survey, 25 respondents said they prefer apples, 30 prefer oranges.
+Does this mean oranges are more popular?
+
+```{r}
+t <- c(25,30)
+chisq.test(t)
+```
+Chi square test for independence gives us a probability of > 5%. (Independence = there is no relationship).
+This means that the difference is not significant at the 95% level, p would have to be < 0.05.
+There is not enough evidence that the difference is not just due to sampling error.
+The effect is too small for the given sample size. Try changing the numbers to 250 and 300 and run the test again.
+
+Unlike in the *t test*, here we do not make any assumptions about the underlying distribution - it is a non-parametric test.
+
+#### Example: is eye color independent of 1) sex, 2) hair color?
+```{r}
+HairEyeColor
+
+# convert the contingency table into a data frame, 
+# generate a new contingency table that summarized by Eye and Sex, but not Hair
+df <- as.data.frame(HairEyeColor)
+
+# plot as a heatmap
+library(viridis)
+ggplot(df, aes(x=Eye,y=Sex, fill=Freq)) + 
+  geom_tile(width = 0.95, height = 0.95) + 
+  scale_fill_viridis(option = "E") +
+  coord_equal() + theme_minimal()
+
+t <- xtabs(data=df,Freq~Eye+Sex)
+t
+x <- chisq.test(t)
+x
+x$expected # we can use round() to make it more legible as integers
+```
+
+To get a sense of what is happening here: let's get a closer look at the contingency tables. The expected values have constant proportions in BOTH directions, rows and columns.
+```{r}
+# normalize all values between 0 and 1
+scale(x$expected)
+scale(x$observed)
+
+# calculate proportions so that all cell values add up to 1
+prop.table(x$expected)
+# normalize each column individually so that the columns add up to 1
+prop.table(x$expected,margin = 2)
+# normalize each row individually so that the rows add up to 1
+prop.table(x$expected,margin = 1)
+```
+
+Let's look at a second example, the relationship between eye and hair color. 
+```{r}
+# generate a contingency table that summarized by Eye and Hair, but not Sex
+t <- xtabs(data=df,Freq~Eye+Hair)
+summary(t)
+
+# ok, here the difference is significant, therefore the variables are NOT independent
+x <- chisq.test(t)
+round(x$expected)
+x$observed
+x
+
+# for example, black hair are less often associated with green eyes than blond hair
+# we can test for individual (pairwise) differences
+# is there a significant difference between Black and Brown hair? --- yes
+x <- chisq.test(t[,c(1,2)])
+x
+round(x$expected)
+x$observed
+
+# Brown and red? --- no
+x <- chisq.test(t[,c(2,3)])
+x
+round(x$expected)
+x$observed
+```
+
+We can also use the chi2 test to compare different regression models, or test whether data fits our assumptions. Let's test for the assumption that brown eyes are twice as common as the other colors
+```{r}
+p.assumed <- c(10,5,5,5)
+# this time, we just tabulate by eye color
+t <- xtabs(data=df,Freq~Eye)
+t
+x <- chisq.test(t,p = p.assumed, rescale.p = T) # we have to rescale p.assumed to add to 1
+x
+x$observed
+x$expected
+# the difference is significant, which means our model does not fit
+
+
+```
+

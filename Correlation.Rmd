@@ -1,0 +1,81 @@
+---
+title: "Correlation"
+output: 
+  html_notebook: 
+    theme: simplex
+---
+Standard chart for examining correlation is the scatter plot. Other elements provide support:
+
+- The ellipse abstracts correlation direction and strength
+- The regression line indicates the slope of the correlation coefficient.
+```{r}
+# Old Faithful Geyser Data: Waiting time between eruptions and the duration of the eruption for the Old Faithful geyser in Yellowstone National Park, Wyoming, USA.
+plot(faithful)
+
+ggplot(faithful,aes(eruptions,waiting)) + 
+  geom_point(alpha = 0.25) +
+  stat_ellipse() +
+  stat_smooth(method =  "lm", size=0.5, se = F, color = "black")
+
+```
+
+
+```{r}
+# corellation coefficient - 0.9 is quite high.
+r <- cor(faithful$waiting, faithful$eruptions)
+r
+# degree of determination - the variance in eruptions explains 81% of the variance in waiting and vice versa.
+r^2
+
+# test of significance - a p < 0.05 is often used to support the alternative h that r is not 0
+c <- cor.test(faithful$waiting,faithful$eruptions)
+c
+c$p.value #only call p-value from result
+
+```
+
+Let's calculate manually.
+
+As a standardized number, correlation requires standardized scores:
+The sum of products of the paired z-scores divided by the number of observation pairs.
+```{r}
+# basic variables
+e1 <- faithful$waiting
+e2 <- faithful$eruptions
+n  <- length(e1) # or e2
+x1 <- mean(e1) # 
+x2 <- mean(e2)
+
+# for comparison: remember variance (square of standard deviation) 
+v <- sum((e1-x1)^2)/ (n-1) # equivalent to var(e1)
+sqrt(v) #standard deviation, equivalent to sd(e1)
+
+# covariance is the same, but using the product of 2 variables instead of 1
+cv <- sum((e1-x1)*(e2-x2))/ (n-1) # equivalent to cov(e1,e2)
+
+# correlation (pearson) covariance divided by product of standard deviations
+r <- cv / (sd(e1)*sd(e2))
+r
+# or, slightly rearranged:
+sum((e1-x1)/sd(e1) * (e2-x2)/sd(e2)) / (n-1)
+
+# manually calculating t-value of the correlation
+# equiv. to cor.test(e1,e2)$parameter
+t <- r*sqrt((n-2)/(1-r^2))
+t
+# rule of thumb,  t > 2 is usually significant at 95% level
+1-pt(t, df=n-1) # or use lower.tail = F argument
+```
+
+
+For data sets with multiple continuous variables, a scatterplot matrix allows comparison of correlations between all combinations of the variables.
+
+```{r}
+# the Fisher iris data set of flower characteristics
+plot(iris)
+
+# ggplot does not have a scatterplot matrix, but there are libraries
+library(GGally)
+ggpairs(iris, aes(color=Species))
+```
+

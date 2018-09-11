@@ -1,0 +1,65 @@
+---
+title: " Linear Regression"
+output: 
+  html_notebook: 
+    theme: simplex
+---
+
+Remember correlation
+```{r}
+# Old Faithful Geyser Data
+plot(faithful)
+
+cor(faithful$eruptions,faithful$waiting)
+cor.test(faithful$eruptions,faithful$waiting)
+
+# create linear model and summarize result
+m1 <- lm(data= faithful, eruptions ~ waiting)
+summary(m1)
+
+# equation: eruptions = 0.0756 * waiting + (-1.874) + residual error
+# r2 81.1%
+
+# can also plot the linear regression line with stat_smooth()
+ggplot(faithful,aes(y=eruptions,x=waiting)) +
+  geom_point() +
+  stat_smooth(method = "lm") 
+
+# look at the distribution of the residual error
+# is it normally distributed?
+# if not, the specified model does not fit well
+qplot(m1$residuals)
+qqnorm(m1$residuals)
+```
+
+
+### Multiple regression
+```{r}
+
+m1 <- lm(data = mpg, cty ~ displ + class)
+m2 <- lm(data = mpg, cty ~ displ + cyl + class)
+m3 <- lm(data = mpg, cty ~ displ + cyl + class + drv)
+summary(m1)
+```
+
+I don't show the other model summaries, but instead combine them into a regression table, a common way to represent regression results in publications.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, results="asis"}
+library(stargazer)
+stargazer(m1,m2,m3, type = "html")
+```
+### Transforming variables
+```{r}
+
+ggplot(mpg,aes(y=cty, x=displ, color = class)) + geom_point() + scale_x_log10() + scale_y_log10()
+
+mpg2 <- mpg
+mpg2$cty.l <- log(mpg2$cty)
+mpg2$disp.l <- log(mpg2$displ)
+
+m2 <- lm(data = mpg2, cty.l ~ disp.l + class + cyl+ drv + manufacturer)
+summary(m2)
+
+
+```
+

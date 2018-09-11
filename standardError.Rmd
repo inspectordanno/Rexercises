@@ -1,0 +1,100 @@
+---
+title: "Sampling, Standard Error, Confidence Intervals"
+output: 
+  html_notebook: 
+    theme: simplex
+---
+
+Drawing a sample from a population, calculating its standard error and confidence interval.
+We use the dataset of monthly sunspot observations. The histogram shows that the dataset is clearly not normally distributed.
+```{r}
+qplot(sunspots)
+qqnorm(sunspots)
+# we draw a random sample of 50 observations
+spots <- sample(sunspots, 50)
+qplot(spots)
+
+# the mean of the population with the mean of the sample are typically different: the sample does not accurately reflect the population 
+c(population = mean(sunspots), sample = mean(spots))
+
+# we calculate the standard error - the SD divided by the sqrt of the number of observations
+se <- sd(spots) / sqrt(length(spots))
+se
+
+# 95% confidence intervals (in 95% of samples, the CI contains the population mean)
+# since error distribution is normal and sample size is > 30, we can use the normal distribution
+# 95% CI: 2.5% distance from the right tail.
+ci <- qnorm(0.975) * se
+ci
+# calculate 95% conf. interval
+m <- mean(spots)
+conf.int <- c(low=m-ci,high= m+ci)
+conf.int
+```
+
+Let's get more in depth and verify if the sampling distribution is actually normal, and if the confidence intervals give us reliable results. We create an array of 100 samples, each with 50 observations randomly picked from the population.
+
+```{r}
+s.mean <- mean(sunspots) # this is the mean of our population
+
+x <- rep(50, 100) # create a vector that repeats the value 50 100 times.
+
+# a new advanced command - sapply applies a function to each element of a vector. The function is defined inline.
+# we could do the same thing with a loop, but this is a typical approach in functional programing which R is optimized for
+# the result is a matrix of 50 rows in which each row is a complete sample of 100 obs.
+spots <- sapply(x, function(x) sample(sunspots,x))
+
+# apply is a related function that works on a matrix instead of a vector. the argument "2" means that we apply the mean function to every row in spots (which contains a complete sample)
+# the result is a vector with the means of each sample
+sp.m <- apply(spots,2, function(x) mean(x))
+
+# check the normality of the distribution. 
+qqnorm(sp.m)
+# standard error is the sd of the sampling distribution.
+sd(sp.m) 
+
+#calculate the estimated standard error from each of our samples
+se <- apply(spots,2, function(x) sd(x)/sqrt(length(x)))
+se
+
+# calculate 95% confidence intervals. Make a convenient data frame with our values.
+ci <- qnorm(0.975)*se
+s.ci <- data.frame(index = seq(1,length(se)), mean = sp.m, se,c.l=sp.m-ci, c.h=sp.m+ci)
+s.ci
+
+# plot the mean & confidence intervals for each sample
+# instead of geom_pointrange you can also use geom_errorbar, geom_crossbar
+ggplot(s.ci,aes(x=index,y=mean)) + 
+  geom_pointrange(aes(ymin=c.l,ymax=c.h, color = c.l<s.mean & c.h>s.mean)) + 
+  geom_hline(yintercept = s.mean) +
+  labs(color = "Inside CI?") +
+  ggtitle("Comparison of Sample Means and Population Mean")
+
+# how many confidence intervals actually contain the population mean?
+s.ci[s.ci$c.l<s.mean & s.ci$c.h > s.mean,]
+```
+A final note: if you draw small samples (e.g. < 30 observations), the normal distribution of the sampling means is no longer applicable. In that case, a different distribution is used, the t-distribution (or Student distribution). It contains a parameter for the sample size and adjusts probabilities accordingly.
+
+```{r}
+x <- rep(10, 100) # small sample
+spots <- sapply(x, function(x) sample(sunspots,x))
+sp.m <- apply(spots,2, function(x) mean(x))
+
+#calculate the estimated standard error from each of our samples
+se <- apply(spots,2, function(x) sd(x)/sqrt(length(x)))
+
+# calculate 95% confidence intervals with student distribution
+ci <- qt(0.975, df=10-1)*se
+s.ci <- data.frame(index = seq(1,length(se)), mean = sp.m, se,c.l=sp.m-ci, c.h=sp.m+ci)
+
+# plot the mean & confidence intervals for each sample
+# instead of geom_pointrange you can also use geom_errorbar, geom_crossbar
+ggplot(s.ci,aes(x=index,y=mean)) + 
+  geom_pointrange(aes(ymin=c.l,ymax=c.h, color = c.l<s.mean & c.h>s.mean)) + 
+  geom_hline(yintercept = s.mean) +
+  labs(color = "Inside CI?") +
+  ggtitle("Comparison of Sample Means and Population Mean")
+
+# how many confidence intervals actually contain the population mean?
+nrow(s.ci[s.ci$c.l<s.mean & s.ci$c.h > s.mean,])
+```

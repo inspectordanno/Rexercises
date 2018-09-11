@@ -1,0 +1,57 @@
+---
+title: "T-distribution and t-tests"
+output: 
+  html_notebook: 
+    theme: simplex
+---
+#### Independent t-Test
+```{r}
+# The counts of insects in agricultural experimental units treated with different insecticides.
+# two groups should be roughly equal in size
+ggplot(InsectSprays,aes(x=spray,y=count)) + geom_boxplot()
+v1 <- InsectSprays$count[InsectSprays$spray=="A"]
+v2 <- InsectSprays$count[InsectSprays$spray=="B"]
+
+# are means significantly different?
+# samples are independent, therefore not paired
+t.test(v1,v2, paired = F)
+
+# two other groups 
+v1 <- InsectSprays$count[InsectSprays$spray=="C"]
+v2 <- InsectSprays$count[InsectSprays$spray=="D"]
+t.test(v1,v2, paired = F)
+```
+#### Paired t-Test
+```{r}
+# 100m running times for athletes before /after training
+v1 = c(12.9, 13.5, 12.8, 15.6, 17.2, 19.2, 12.6, 15.3, 14.4, 11.3)
+v2 = c(12.7, 13.6, 12.0, 15.2, 16.8, 20.0, 12.0, 15.9, 16.0, 11.1)
+
+c(mean(v1), mean(v2))
+t.test(v1,v2, paired = T)
+```
+
+
+
+The confidence intervals overlap, t is small, p is larger than 0.05: the difference in means is not significant.
+
+#### Effect size (Chohen d)
+
+```{r}
+# two groups 
+v1 <- InsectSprays$count[InsectSprays$spray=="C"]
+v2 <- InsectSprays$count[InsectSprays$spray=="D"]
+
+# absolute difference between means
+abs(mean(v1)-mean(v2))
+
+# Cohen d function for estimating effect size
+# difference in mean divided by difference in sd's
+cohen <- (mean(v2)-mean(v1))/ 
+  sqrt(
+    (sd(v1)^2+sd(v2)^2) / 2 
+  )
+
+cohen
+```
+

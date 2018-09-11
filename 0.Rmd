@@ -1,0 +1,101 @@
+---
+title: "Getting started"
+output:
+  html_notebook:
+    theme: simplex
+  html_document:
+    df_print: paged
+---
+
+You can execute R scripts in three ways:
+
++ from the Command line (R command)
++ from the R gui (R.app on the mac, offers a simple development environment)
++ from the development environment of Rstudio. 
+
+We will focus on this last option.
+
+##### Let's explore built-in data sets:
+R and its various packages come with many built-in data sets The data() function lists them. Entering a function name without brackets lists its content, in this case the source code of the function "data".
+
+```{r}
+data() # list data sets
+cars # let's look at the content of the cars data set
+
+# more information about the data set:
+??cars
+
+plot(cars) # plots the data set using the generic plot function
+```
+
+We can investigate the structure of the data set. You can access the same information in the Environment tab of the GUI.
+
+```{r}
+str(cars) # function to display the structure of the data set
+```
+
+The data set is a "data frame", a rectangular composite data structure, similar to an excel table. It consists of two variables, in this case vectors, with each 50 elements. We can look at them individually:
+
+```{r}
+cars$speed
+cars$dist
+```
+
+We can also generate summary statistics of the data frame or each of its variables. For a numerical vector, summary() gives minimum, maximum, mean, median, and the 1st and 2nd quartiles. we can also call functions such as mean(), median() on the variables.
+
+```{r}
+summary(cars)
+mean(cars$speed)
+median(cars$dist)
+```
+
+##### Building vectors and data frames
+
+Copy the cars data set into a new data frame, which we will then manipulate. We use the assignment operator <-
+We can also make a new variable, here as a result of a calculation.
+
+```{r}
+mycars <- cars
+mycars$speedratio <- mycars$speed / mycars$dist
+
+# introducing the generic histogram function
+hist(mycars$speedratio)
+
+# subsetting / filtering a data frame
+mycars[1:5,] # only the first five rows
+mycars[,2] # only the second column (here, speed variable)
+mycars[5:10,1] # the values of the fifth to tenth row of the first column
+mycars[mycars$speedratio<2.5,] #only rows where the speedratio variable is smaller than 2.5
+
+```
+
+#### Let's build a data frame from scratch: 
+
+```{r}
+a <- 5 # assign the value five to the variable a
+a <- c(1,2,6,8,3) # assign a vector with five elements to variable a. c() - combine values function.
+a[1:3] # report first three elements of vector a
+b <- c(3,1,5,1,6) # assign a second vector to variable b
+
+c <- data.frame(a,b) # create a data frame c from vectors a and b.
+c <- data.frame(first = a, second = b) # same as before, but give new variables different names
+
+c$idx <- seq(1:5) # add a sequence from 1 to 5 as index
+
+c$rnd <- runif(5,min = 1, max = 10) # add a column of five random numbers between 1 and 10
+
+plot(c) # based on the data set, plot generates a scatterplot matrix
+```
+
+#### Load an external data set:
+
+```{r}
+quake <- read.csv(file = "./data/earthquake.csv", header = T, sep = ",")
+
+str(quake) # note the different non-numerical variables, missing values etc.
+summary(quake)
+
+# how are magnitude and depth correlated?
+plot(quake$mag,quake$depth)
+```
+

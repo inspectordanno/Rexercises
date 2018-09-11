@@ -1,0 +1,119 @@
+---
+title: "Normal distribution"
+output: 
+  html_notebook: 
+    theme: simplex
+---
+
+
+#### Probability density function
+Plotting a normal distribution for values between -5 and 5.
+*dnorm()* is the normal probability density function.
+```{r}
+# notice that we do not specify a data set, use implicitly through the mapping. 
+x <- seq(-5,5,0.1) 
+ggplot() + geom_line(aes(x=x, y=dnorm(x))) + ggtitle("probability density") 
+```
+#### How to interpret y, the probability density?
+
+We have to keep in mind: 
+
++ the area under the curve equals 1
++ the probability for any exact point on the curve is 0 
++ choose an interval on x, the probability of a point falling within is the area of that curve section 
+
+#### The cumulative probability function
++ the integration gives us the cumulative probability function. y is the probability that a random point is left of a particular point on the curve
++ remember that the normal curve is asymptotic, actually never touches y = 0 or 1
+```{r}
+ggplot() + geom_line(aes(x=x, y=pnorm(x))) + ggtitle("cumulative probability")
+```
+#### Generating normally distributed, random values:
+
++ try choosing larger / smaller numbers and running the function several times.
++ notice the mean, median, sd values of the sample.
++ we will superimpose a theoretical normal curve for comparison
+```{r}
+x <- rnorm(n = 500)
+ggplot() + 
+  geom_histogram(aes(x, y= ..density..), bins= 15) +
+   geom_line(aes(x=x, y=dnorm(x)))
+  
+
+summary(x)
+sd(x)
+```
+
+We can compare the generated, imperfect sample with the theoretical normal function. This can be done with a Quantile-Quantile plot (QQplot) that compares both distributions along their x axis. A perfect match would give a straight diagonal line. The sample histogram can look terrible, but the QQ plot shows it is not so far off. 
+
+```{r}
+# coord_fixed() gives us a 1:1 aspect ratio
+ggplot() + geom_qq(aes(sample = x)) + coord_fixed() 
+```
+
+### Z-scores and standardization
+
+The sample can be standardized, so it can be compared to the normal distribution. After standarziation, the raw observations are converted into z-scores, centered on the mean and using standard deviations as a unit. 
+
+```{r}
+# load Pearson's height data
+height <- read.csv(file = "http://www.randomservices.org/random/data/Pearson.txt",sep = "\t")
+height <- height$Son
+summary(height)
+
+h.sd <- sd(height)
+h.mean <- mean(height)
+
+# z-scores of height
+h.z <- (height - h.mean) / h.sd
+
+# both histograms look a bit different because of binning 
+ggplot() + geom_histogram(aes(x=height))
+ggplot()+ geom_histogram(aes(x=h.z, y= ..density..))
+
+# is it normally distributed?
+ggplot() + geom_qq(aes(sample = h.z)) + coord_fixed()
+```
+
+Looks good! Knowing that the sample is normally distributed, we can now use the cumulative normal probability function to predict the probability that a particular height occurs. 
+
+
+```{r}
+# probability of height less than 70?
+pnorm(70, mean = h.mean, sd = h.sd)
+
+# probability of height more than 70?
+1 - pnorm(70, mean = h.mean, sd = h.sd)
+
+# between 70 and 75?
+pnorm(75, mean = h.mean, sd = h.sd) - pnorm(70, mean = h.mean, sd = h.sd)
+
+# outside 70 and 75?
+1- (pnorm(75, mean = h.mean, sd = h.sd) - pnorm(70, mean = h.mean, sd = h.sd))
+```
+
+Lets look again at the standardized sample distribution.
+ 
+
+```{r}
+
+ggplot(data = data.frame(h.z)) + 
+  geom_freqpoly(aes(x= h.z, y = ..density.. ), bins = 25, color = "darkgray") + 
+  stat_function(fun = dnorm, geom = "line", args = list(mean = 0, sd = 1)) + 
+  annotate(geom = "rect", xmin = c(-3,-2,-1), xmax = c(3,2,1), ymin = 0, ymax = 0.5, alpha = 0.2)
+
+```
+
+Standardized intervals have defined probabilities: 
+
+```{r}
+pnorm(1) - pnorm(-1) # p for a value between sd -1 and 1 is 0.6826895 (~68%)
+pnorm(2) - pnorm(-2) # p for a value between sd -2 and 2 is 0.9544997 (~95%)
+pnorm(3) - pnorm(-3) # p for a value between sd -3 and 3 is 0.9973002 (~99%)
+```
+
+We can also calculate the boundaries of height for different z scores.
+```{r}
+c(-2,-1,1,2) * h.sd + h.mean
+```
+

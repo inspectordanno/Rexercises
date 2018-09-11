@@ -1,0 +1,102 @@
+---
+title: "Manipulating Data Frames"
+output: 
+  html_notebook: 
+    theme: simplex
+---
+
+```{r}
+quake <- read.csv(file = "./data/earthquake.csv")
+# inspect data structure
+str(quake)
+
+# summarize, tabulate
+table(quake$type)
+# 2 way tables
+t <- table(quake$type, quake$magType)
+t
+# add sums for columns
+addmargins(t,margin = 1)
+
+# contingency table
+# table counts observations, contingency tables performs sumation of values
+# xtabs uses the formula interface. ~ means "by" - evaluate mag by type and magType
+xtabs(data = quake,  mag ~ type + magType)
+
+# tables can be converted (coerced) into data frames
+# often necessary when working with ggplot
+df <- as.data.frame(table(quake$type, quake$magType))
+df
+
+# the variables can be renamed by assigning them new names
+names(df) <- c("type","magType", "Freq")
+df
+
+# new data frames can be constructed 
+data.frame(quake$mag, quake$magType, lat=quake$latitude, lon=quake$longitude)
+
+# new columns can be added, calculations performed
+quake$dummy <- 1 + quake$mag
+
+# columns can be deleted by assigning NULL values
+quake$dummy <- NULL
+
+# factor variables are actually integers with labels (just showing the first 10)
+as.numeric(quake$magType)[1:10]
+
+# sometimes it is useful to conver them to strings (just showing the first 10)
+as.character(quake$magType)[1:10]
+
+# parsing of time variables is a particularly complex issue
+# R has powerful structures for working with time objects
+as.Date(quake$time)[1:10]
+times <- as.POSIXct(quake$time,format = "%Y-%m-%dT%H:%M:%S")[1:10]
+times
+# change display format, convert timezone
+strftime(times,format = "%Y-%m-%d %H:%M:%S", tz = "EST")
+
+# plot functions use date and time objects, converting is therefore useful
+plot(quake$time, quake$mag)
+quake$time <- as.POSIXct(quake$time,format = "%Y-%m-%dT%H:%M:%S")
+plot(quake$time, quake$mag)
+```
+Transform table 
+```{r}
+# plyer functions - filter, select
+library(dplyr)
+
+# a number of convenience functions to make data frame manipulation easier
+# select columns and generate a new data frame
+select(quake, time, mag, depth)
+
+# filter specific values
+# since "filter" is a common command, it is safer to explicitly call the dplyr function
+dplyr::filter(quake, type == "explosion")
+
+# summarize
+# %>% is the pipe operator -- the output of the left side becomes the input for the right side
+# the data frame is first grouped by a number of variables
+# summarise then applies functions to these groups and generates new columns
+quake %>% group_by(magType, type) %>% dplyr::summarise(mean.mag = mean(mag), sd.mag = sd(mag))
+
+# for those interested:
+# in base R, this is done with the aggregate function
+g <- aggregate(data = quake, 
+                mag ~ magType + type, 
+                FUN = function(x) c(mean.mag = mean(x),sd.mag = sd(x)))
+# because the output of FUN is an inconvenient nested list, we have to convert it to a data frame
+# the data frame is then bound as new columns to the original data frame (cbind) then the nested list deleted
+g <- cbind(g,as.data.frame(g$mag))
+g$mag <- NULL
+
+
+# long to wide with gather and spread (tidyr package)
+# first make a smaller data set
+tmp <- select( quake, id, mag, type)
+wide <- spread(data=tmp,key = "type", value = "mag")
+
+long <- gather(data=wide, key = "type", value = "mag", earthquake, explosion, 'quarry blast')
+
+
+```
+

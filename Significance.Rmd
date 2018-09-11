@@ -1,0 +1,80 @@
+---
+title: "Tests of Significance"
+output: 
+  html_notebook: 
+    theme: simplex
+---
+
+The 95% confidence interval chosen in the previous example is no coincidence, it is a conventional criterium for statistical significance within the social sciences (other fields have other accuracy requirements and therefore different values). In a frequentist framework, a result is generally considered significant (reliable) if the probability of it being random is less than 5%, or roughly two standard deviations.
+
+How likely is it that a difference in mean of samples from two groups actually represents different means of the population? How likely is it that these differences are just the result of chance?
+
+Using the MPG dataset, we wil compare
+
++ Fuel consumption by transmission type
++ Fuel consumption by drive
+
+
+```{r}
+ggplot(mpg, aes(y=cty, x = trans)) + geom_boxplot() + ggtitle("Fuel consumption by transmission type")
+```
+There seem to be big differences. But can we be sure that the differences are not just sampling errors? Let's look at the means and 95% confidence intervals.
+```{r}
+# the mean_cl_normal function (package Hmisc) calculates confidence 95% intervals (and others if specified)
+ggplot(mpg, aes(y=cty, x = trans)) + stat_summary(fun.data = mean_cl_normal, geom = "errorbar") +
+stat_summary(fun.y = mean, geom = "point") 
+```
+A large overlap of CIs, therefore we cannot rule out that the differences are just due to chance / sampling errors.
+Compare that with the differences grouped by drive. Here, the differences are quite clear.
+```{r}
+ggplot(mpg, aes(y=cty, x = drv)) + stat_summary(fun.data = mean_cl_normal, geom = "errorbar") +
+stat_summary(fun.y = mean, geom = "point")
+```
+Let's calculate it manually. There are a few advanced techniques here - aggregating a data set by a variable, and applying a number of functions to the groups. This gives us a table of summary statistics containing the mean, standard error, confidence intervals, and size of the sample.
+
+```{r}
+# let's calcualate it manually
+# pick the two relevant columns - consumption in city, type of transmission
+transm <- data.frame(cty = mpg$cty, trans = mpg$trans)
+
+# population mean
+m.pop <- mean(mpg$cty)
+m.se <- sd(mpg$cty)/sqrt(length(mpg$cty))
+
+# a function to calculate 95% CIs using the t-distribution
+ci <- function(x) qt(0.975,df = length(x)-1)*sd(x)/sqrt(length(x))
+
+# aggregate data and apply functions - mean, standard error, CIs
+tr <- aggregate(data = transm, 
+                . ~ trans, 
+                FUN = function(x) c(mean = mean(x), 
+                                    se = sd(x)/sqrt(length(x)),
+                                    ci.l = mean(x) - ci(x), 
+                                    ci.h = mean(x) + ci(x),
+                                    n = length(x)))
+
+# str(dr) shows that result is nested
+# unnest the resulting data structure
+t <- as.data.frame(tr$cty)
+tr <- data.frame(trans=tr$trans, t)
+
+# now we plot it and superimpose the population mean
+ggplot(tr,aes(x=trans, y = mean)) + 
+  geom_point() +
+  geom_errorbar(aes(ymin=ci.l, ymax=ci.h)) + 
+  geom_hline(yintercept = m.pop, color = "red")
+
+# calculate t values
+# is mean(front wheel) and mean(4-wheel) significantly different?
+
+# t = (sample mean - population mean) / standard error estimate
+t <- (tr$mean - m.pop) / tr$se
+t
+
+# is the probability that the sample mean is equal the population mean smaller than 5%?
+# we use the t-distribution to get the p-value for a particular t-score
+# we want the probability that our value is significantly different, i.e. outside the 95% CI
+# because t-dist is symmetric and t-scores can be negative, we use the absolute value
+1-pt(abs(t),df=tr$n-1) < 0.05
+
+```

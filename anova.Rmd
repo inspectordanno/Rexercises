@@ -1,0 +1,37 @@
+---
+title: "Analysis of Variance - ANOVA"
+output: 
+  html_notebook: 
+    theme: simplex
+---
+
+```{r}
+
+
+str(mpg)
+ggplot(mpg,aes(x=trans,y=cty)) + stat_boxplot() 
+pairwise.t.test(mpg$cty,mpg$trans)
+
+# build an anova model. analysis of variance with city mpg by trans
+# note, this is unbalanced due to the large differences in observations.
+# better would be a data set with equal groupsizes
+fit <- aov(cty ~ trans, data = mpg)
+
+fit
+anova(fit) # summary(fit) is equivalent
+
+model.tables(fit, type = "means")
+model.tables(fit, type = "effects") # the relative differences from the mean
+
+TukeyHSD(fit)
+
+tuk <- TukeyHSD(fit)
+tuk <- as.data.frame(tuk$trans)
+tuk$pair <- rownames(tuk)
+  
+ggplot(data = tuk, aes(x=pair,y=diff)) + 
+  geom_pointrange(aes(ymin=lwr,ymax=upr, color = `p adj` < 0.05 ), size=0.2) + 
+  labs(color = "Significant difference") +
+  coord_flip()
+```
+

@@ -1,0 +1,53 @@
+---
+title: "Visualizing data with ggplot"
+output: 
+  html_notebook: 
+    theme: simplex
+---
+
+the ggplot2 visualization library is based on the grammar of graphics (gg). Visualizations are composites with several layers that follow a defined syntax and grammar. The approach behind ggplot is described in [this paper](http://vita.had.co.nz/papers/layered-grammar.html). A detailed documentation of ggplot can be found at [https://ggplot2.tidyverse.org/reference/index.html](https://ggplot2.tidyverse.org/reference/index.html)
+
+The following example expresses the format *base layer + geometry + aesthetics (+ scales, transforms ... )* in different variations.
+
+```{r}
+# load H. Wickham's tidyverse package. 
+# If not installed, install with install.packages("tidyverse")
+library(tidyverse)
+str(mpg) 
+
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy))
+
+```
+
+The following are also valid and give the same result, but are grammatically different. The differences become clear when multiple layers are used.
+
+```{r}
+ggplot() + 
+  geom_point(data = mpg, mapping = aes(x = displ, y = hwy))
+```
+
+
+Mapping attribute can be ommitted / implicitly used in most cases. Specifying data and aesthetic mapping in the base layer means all subsequent layers will inherit them unless explicitly overridden.
+
+```{r}
+ggplot(data = mpg, aes(x = displ, y = hwy)) + 
+  geom_point() + geom_smooth()
+```
+
+The aesthetic function maps columns from the data set to visual variables. ggplot automatically chooses color scales etc. based on the data format. It can be manually overridden or tweaked (here, the opacity is reduced)
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(aes(x = displ, y = hwy, size = cyl, color = class), alpha = 0.5)
+```
+
+A slightly more complex example with two layers, a box plot and a jittered point plot. To use the cyl (# cylinders) as a categorical variable, we have to convert it to a factor variable. we can do this on the fly with as.factor(cyl). We also added a title. Try replacing class with displ. Scale_color_brewer() modified the color scale. 
+
+```{r}
+ggplot(data = mpg, aes(x = as.factor(cyl), y = hwy)) + 
+  geom_jitter(width = 0.2, alpha = 0.75, aes(color = class)) + 
+  geom_boxplot(fill = "transparent", outlier.size = 0) + 
+  scale_colour_brewer(palette = "Dark2") +
+  ggtitle("Hwy Consumption by Nr. of Cylinders")
+```

@@ -1,0 +1,133 @@
+---
+title: "Time and Date in R"
+output:
+  html_notebook:
+    theme: simplex
+  html_document:
+    df_print: paged
+---
+A detailed tutorial of working with time and date data can be found [here](http://www.noamross.net/blog/2014/2/10/using-times-and-dates-in-r---presentation-code.html).
+We will work with a json data set of food inspections in Boston. See more [here](https://data.boston.gov/dataset/food-establishment-inspections).
+
+```{r}
+# Library to load json files
+#install.packages("jsonlite")
+library(jsonlite)
+
+url <- "http://data.boston.gov/datastore/odata3.0/4582bec6-2b4f-4f9e-bc55-cbaa73117f4c?$top=150&$format=json"
+food <- fromJSON(url)
+
+#inspect the loaded file
+head(food)
+# the data frame is in the $value list item - that is all we need now.
+food <- food$value
+```
+
+```{r}
+# here we have a date field (date and time of issue) in internet ISO format
+food$ISSDTTM[1:5]
+
+# we create a new variable keeping only the date, disregarding time
+# in this case, as.Date automatically recognizes the format
+food$date <- as.Date(food$ISSDTTM)
+food$date[1:5]
+
+# if necessary we could also specify the format manually, for example
+as.Date("04/23/2015", format = "%m/%d/%Y")
+```
+
+
+#### Calculation with time
+```{r}
+# how many inspections on weekdays, months, quarters?
+weekdays(food$date)[1:15]
+months(food$date)[1:15]
+quarters(food$date)[1:15]
+
+#plot inspections per month 
+library(ggplot2)
+qplot(months(food$date))
+
+# result per weekdays
+ggplot(data=food, aes(x=weekdays(date), fill=RESULT)) + geom_bar() 
+
+# date distribution
+qplot(food$date, binwidth=15)
+
+# is the first date later than the second?
+food$date[1] > food$date[21]
+
+#how many days between the two?
+food$date[1] - food$date[21]
+
+difftime(food$date[1], food$date[21], units = 'hours')
+
+# print only years
+format(food$date, "%Y")[1:5]
+# print only years by numbers
+as.numeric(format(food$date, "%Y"))[1:5]
+# list only those dates later than 2010
+food$date[format(food$date, "%Y") > "2010"]
+```
+
+### Posixlt and Posixct
+There are two basic classes of date/times. Class "POSIXct" represents the (signed) number of seconds since the beginning of 1970 (in the UTC time zone) as a numeric vector. Class "POSIXlt" is a named list of vectors representing seconds, minutes, hours, days, years etc.
+
+
+```{r}
+#posix is a format that combines date and time 
+as.POSIXlt(food$ISSDTTM)[1:5]
+tm <- as.POSIXlt("2013-07-24 23:55:26")
+str(tm)
+
+# the units are seconds. substract one hour (1000 sec)
+as.numeric(tm)
+tm
+tm - 26
+
+# POSIXlt stores date and time as a list - you can print it via
+unlist(tm)
+
+# and access components
+tm$mon
+tm$hour
+tm$min
+tm$sec
+
+# years are calculated as difference from 1900
+tm$year
+
+# POSIXct is an alternative version, that just stores the number of seconds
+tm <- as.POSIXct("2013-07-24 23:55:26")
+
+# this would give us now an error - no longer work
+# tm$hour
+
+strptime( tm, format = "%Y-%m-%d")
+```
+#### Working with Lubridate
+
+The lubridate package was designd to make working with Posix dates and times more convenient.
+
+```{r}
+# these operations can be made more convenient with the lubridate package
+#install.packages("lubridate")
+library(lubridate)
+
+#learn how to use the package functions by reading the vignette
+#browseVignettes("lubridate")
+
+#this gives us months, days, years as numbers. 
+month(food$date)
+day(food$date)
+year(food$date) > 2010
+
+# also correctly resolves unix years
+year(tm)
+
+# show a histogram only starting the year 2009
+f10 <- food[year(food$date)>2009,]
+ggplot(f10,aes(x=date)) + geom_histogram()
+```
+
+

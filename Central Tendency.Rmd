@@ -1,0 +1,70 @@
+---
+title: "Central Tendency"
+output: 
+  html_notebook: 
+    theme: simplex
+---
+
+Examples for the chapter 2 of Urdan. 
+
+
+```{r}
+air <- airquality
+str(air)
+
+
+# basic descriptive statistics of the distribution, example temperature
+summary(air)
+
+# temperature values sorted - the numbers are integers
+sort(air$Temp)
+
+# number of observations
+length(air$Temp)
+
+# quartiles - min (0%), max (100%), median (50%), first quartile (25%), third quartile (50%)
+quantile(air$Temp)
+
+# mean, median, sample variance, sample standard deviation
+mean(air$Temp)
+median(air$Temp)
+var(air$Temp)
+sd(air$Temp)
+
+# distribution of temps
+# also try first the ggplot equivalent of the generic plot function
+qplot(air$Temp)
+
+# more accurate syntax (try replacing geom_histogram with geom_freqpoly and geom_dotplot)
+g <- ggplot(data=air)
+g + geom_histogram(aes(x=Temp))
+
+# y uses the density distribution (area under line is 1 - also works for histo)
+g + geom_freqpoly(aes(x=Temp, y=..density..), bins = 15)
+
+# for boxplot, we need a category for x (simply assigned a constant value)
+# coord_flip() swaps x and y
+g + geom_boxplot(aes(x= 1,y=Temp)) + coord_flip()
+
+
+# superimposing statistical moments over dotplot
+# the theme function is necessary to hide the y axis, which is not meaningful for dotplots
+# most lines of this command are just annotation
+g + 
+  geom_dotplot(aes(x=Temp), binwidth = 1, fill = "grey", color = "transparent") +
+  geom_vline(xintercept = mean(air$Temp), color="red", size= 1.5) +
+  geom_vline(xintercept = median(air$Temp), color="blue") +
+  geom_vline(xintercept = mean(air$Temp)-sd(air$Temp), color="red", alpha = 0.5) +
+  geom_vline(xintercept = mean(air$Temp)+sd(air$Temp), color="red", alpha = 0.5) + 
+  annotate("text",y = 1, x = mean(air$Temp)+sd(air$Temp),label = "mean + sd", color = "red", hjust = 0) +
+  annotate("text",y = 1, x = median(air$Temp),label = "median", color = "blue", hjust = 0) + 
+  theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank())
+```
+If we want the population variance and sd, we have to transform the variance and replace the N - 1 divisor with N
+```{r}
+pop_var <- var(air$Temp) * (length(air$Temp) - 1) / length(air$Temp) 
+pop_sd <- sqrt(pop_var)
+```
+
