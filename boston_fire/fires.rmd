@@ -1,0 +1,44 @@
+---
+title: "Boston Fires June 2018"
+author: "Dan Spector"
+date: "9/17/2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###This is a dataset of all fires in Boston in June of 2018.
+
+##Setup
+Here, I import the dataset and load tidyverse. Then, I attempt to trim all the whitespace from the neighborhood strings. Finally, summary data.
+
+```{r}
+data = read.csv("fire_june_2018.csv", header = TRUE, strip.white = TRUE)
+summary(data)
+```
+##Bar Chart
+Next, I build a bar chart showing total number of fires by neighborhood. For some reason, I can't get the whitespace in the x labels to go away :(
+```{r}
+library(tidyverse)
+ggplot(data = data) +
+  geom_bar(mapping = aes(x = Neighborhood )) +
+   theme(text = element_text(size=8),
+        axis.text.x = element_text(angle=90, vjust=0.5),
+        axis.ticks.x = element_blank()) +
+  ylab("Number of Fires") +
+  ggtitle("June 2018 Fires in Boston, MA")
+```
+
+##Scatterplot
+Now, I try to make a scatterplot showing the zip codes on the x axis and the types of roads on the y axis. I tried to figure out how to make the zip codes discrete, but discrete_scale_x wasn't working for me.
+```{r}
+ggplot(data = data, aes(x=Zip, y=Street.Type)) + 
+  geom_point(mapping = aes(x=Zip, y=Street.Type)) +
+  xlab("Zip Code") +
+  ylab("Road Type")
+```
+
