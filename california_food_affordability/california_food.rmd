@@ -65,6 +65,14 @@ ggplot() +
   ggtitle("Income Data of California Households Headed by a Female")
 ```
 
+Aggregate: Dietmar showed me this in class.
+
+```{r}
+incomebyRace <- aggregate(median_income ~ race_eth_name, data = filtered_data, FUN = mean)
+ggplot(incomebyRace, aes(x= race_eth_name, y= median_income)) + geom_bar(stat = "identity")
+```
+
+
 ##Mean Affordability Ratio by City
 
 Now, I want to find the mean affordability ratio for various cities, and plot them on a scatterplot. The lower the affordability ratio, the lower the percentage of income goes to food. The higher the affordability ratio, the higher the percentage of income goes to food.
