@@ -2,6 +2,7 @@
 title: "California Food Affordability"
 output: html_notebook
 ---
+####R analysis by Dan Spector
 
 ##This is a dataset from California Health and Human Services about food affordability in Californian female-headed households with children. 
 
@@ -12,7 +13,7 @@ From the summary:
 Link to the data:
 https://data.chhs.ca.gov/dataset/food-affordability-2006-2010
 
-First, I import the data and load ggplot.
+First, I import the data and load tidyverse. I'm reading the dataset from online but I've attached a local copy in the folder. I'm also installing a package which will be helpful later on for labeling the scatterplot.
 
 ```{r}
 food_data <- read.csv("https://data.chhs.ca.gov/dataset/0114f5bb-4975-419d-95d9-5f0179a8de06/resource/916e2a2e-383b-4af5-9f5b-310500961cb5/download/food-affordability-2006-2010.csv")
