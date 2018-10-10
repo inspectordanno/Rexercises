@@ -1,0 +1,91 @@
+---
+title: "California Food Affordability"
+output: html_notebook
+---
+### R analysis by Dan Spector
+
+#### This is a dataset from California Health and Human Services about food affordability in Californian female-headed households with children. 
+
+```{r, echo=TRUE, include=FALSE}
+food_data <- read.csv("https://data.chhs.ca.gov/dataset/0114f5bb-4975-419d-95d9-5f0179a8de06/resource/916e2a2e-383b-4af5-9f5b-310500961cb5/download/food-affordability-2006-2010.csv")
+library(tidyverse)
+str(food_data)
+```
+
+```{r}
+filtered_data <- filter(food_data, geoname != "California" & race_eth_name != "Total")
+```
+
+#### Standard Error
+
+I will illustrate the standard error by drawing a random sample of food cost per year.
+
+Here I calculate several summary statistics The histogram shows he dataset as a whole is positively skewed:
+```{r}
+cost <- (filtered_data$cost_yr)
+cost.mean <- mean(cost, na.rm = TRUE)
+cost.sd <- sd(cost, na.rm = TRUE)
+cost.z <- (cost - cost.mean) / cost.sd
+hist(cost.z)
+```
+
+```{r}
+qqnorm(cost)
+qplot(cost)
+```
+These graphs also show the data is not normally distributed.
+
+Now I want to create a random sample of 100 cost per years, and see the distribution of the sample.
+
+```{r}
+randomSample <- sample(cost, 100)
+qplot(randomSample)
+```
+
+The sample also appears positively skewed. Now, I want to compare the population mean with the sample mean, and calculate the standard error.
+
+```{r}
+means <- c(population = cost.mean, sample = mean(randomSample, na.rm = TRUE))
+standardError <- sd(randomSample, na.rm = TRUE) / sqrt(length(randomSample))
+standardError
+```
+
+I will calculate a confidence interval of 95%. I will add and subtract the ci from the sample mean, which will give me the confidence interval.
+
+```{r}
+ci <- qnorm(0.975) * standardError
+ci
+# calculate 95% conf. interval
+m <- means[2]
+conf.int <- c(low=m-ci,high= m+ci)
+conf.int
+```
+There is 95% confidence that the actual population mean is between those two values. Indeed, the actual population mean is 7268.952, which is between these two values.
+
+#### Unpaired T test
+
+Now I will take two samples of 50 observations each and see if the difference in their means is significant. I'm pretty sure I should use an unpaired T test, since the groups aren't before/after and are independent.
+
+```{r}
+sample1 <- sample(cost, 50)
+sample2 <- sample(cost, 50)
+
+t.test(sample1, sample2, paired= FALSE)
+```
+
+T is small, p-value is over .05, therefore the difference in means is not significant.
+
+#### Effect size
+
+```{r}
+abs(mean(sample1, na.rm = TRUE) - mean(sample2, na.rm = TRUE))
+```
+```{r}
+cohen <- (mean(sample2, na.rm = TRUE)-mean(sample1, na.rm = TRUE))/ 
+  sqrt(
+    (sd(sample1, na.rm = TRUE)^2+sd(sample2, na.rm = TRUE)^2) / 2 
+  )
+
+cohen
+```
+Effect size is very small, therefore the result is not statistically significant.

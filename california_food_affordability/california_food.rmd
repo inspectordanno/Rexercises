@@ -116,4 +116,79 @@ ggplot(city_df, aes(x=cityMeans, y=population)) +
 
 According to this graph, affordability ratio is correlated with population. In other words, as population increases, more income tends to go to food. However, this correlation is definitely misleading because this sample is not representative of California as a whole. The smaller populated cities on this graph (Carmel, Malibu, Mountain View) are relatively wealthy, so it would make sense that less income goes to food in these places. Not all small towns in California are wealthy!
 
+##Distribution, Normality, and Z Scores
 
+First I will plot two simple histograms comparing the distribution of African American and Asian incomes. To refresh, this is the distribution of median household incomes of female-headed households in all California cities and towns.
+
+```{r}
+hist(AfricanAm$median_income)
+hist(Asian$median_income)
+```
+I already have the mean of the median income distributions from the previous analysis. However, I still need to calculate the standard deviations. Then, I can calculate the z-scores.
+
+
+```{r}
+AfricanAm.sd <- sd(AfricanAm$median_income, na.rm = TRUE)
+Asian.sd <- sd(Asian$median_income, na.rm = TRUE)
+
+AfricanAm.z <- (AfricanAm$median_income - AfricanAmMean) / AfricanAm.sd
+Asian.z <- (Asian$median_income - AsianMean) / Asian.sd
+
+hist(AfricanAm.z)
+hist(Asian.z)
+```
+
+Both of these distributions are positively skewed. In other words, the majority of the income distribution for both groups is on the lower end, and there is a large tail to the right. That means the mean will be larger than the median. In general, income in the U.S. tends to be positively skewed in this capacity. There are simply a much greater number of lower wage earners than higher wage earners.
+
+Now, let's look at the qqplots and test for normality.
+
+```{r}
+qqnorm(AfricanAm.z)
+qqline(AfricanAm.z)
+
+qqnorm(Asian.z)
+qqline(Asian.z)
+```
+```{r}
+shapiro.test(AfricanAm.z)
+shapiro.test(Asian.z)
+```
+In The Shapiro-Wilk normality test, the null hypothesis is that the distribution is normal:
+http://www.sthda.com/english/wiki/normality-test-in-r
+
+Therefore, because the p-values are below .05, the result is significant and we can reject the null hypothesis. Therefore, these distributions are not normal.
+
+###Now, let's examine the distribution of cost of food per year amongst all female-headed families in California:
+
+```{r}
+hist(filtered_data$cost_yr)
+```
+Could this be another positively skewed distribution?
+
+Now for the z-scores:
+
+```{r}
+cost <- (filtered_data$cost_yr)
+cost.mean <- mean(cost, na.rm = TRUE)
+cost.sd <- sd(cost, na.rm = TRUE)
+cost.z <- (cost - cost.mean) / cost.sd
+hist(cost.z)
+```
+Is this a normal distribution with very high outliers or a positively skewed distribution? 
+
+```{r}
+qqnorm(cost.z)
+qqline(cost.z)
+
+shapiro.test(cost.z)
+```
+
+Since the Shapiro test doesn't work with more than 5000 values, I will use another normality test called the Anderson-Darling test.
+
+```{r}
+install.packages("nortest")
+library(nortest)
+
+ad.test(cost.z)
+```
+Again, the null hypothesis is normality. Since the p-value is <.05, the null hypothesis is rejected. This is not a normal distribution. As seen in the first histogram, there is a small minority of families with a very high food cost per year, around $15,000 - $16,000, which skews the data in the positive direction.  
