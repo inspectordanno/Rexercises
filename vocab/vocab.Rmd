@@ -1,0 +1,63 @@
+---
+title: "Vocabulary and Years of Education"
+output: html_notebook
+---
+### R analysis by Dan Spector
+
+#### This dataframe compares vocabulary and years of education. It is from responses to U.S. General Social Surveys, 1972-2016.
+https://vincentarelbundock.github.io/Rdatasets/doc/carData/Vocab.html
+
+The dataframe has four columns.
+
+1. Year: Year of the Survey
+2. Sex: Sex of the Respondent
+3. Education: Education, in years
+4. Vocabulary: Number of vocabulary words correct on a 10 question test.
+
+```{r, echo=TRUE, include=FALSE}
+library('tidyverse')
+vocab <- read.csv('vocab.csv', header = TRUE)
+```
+#### Are years of education of the respondent correlated with the number of questions correct on a vocabulary test?
+I want to investigate if there is a correlation between the number of years of education, and the number of vocabulary words correct on the test. I would expect there to find a positive correlation: more years of experience should yield a higher number of questions correct.
+
+First, I will make a scatterplot to see if there are any visible graphical patterns.
+
+```{r}
+ggplot(vocab, aes(x=education, y=vocabulary)) + geom_point() + geom_jitter() + geom_density2d() 
+```
+The results seem to be widely dispersed, but positively correlated (I used jitter, because without it there was overplotting and it was impossible to see any correlation). There is a lot of clustering around the 12-13 years of education mark, which might make sense because this corresponds to an American high school education. I will use a t-test to investigate level of education later.
+
+#### Correlation
+
+```{r}
+cor(vocab$education, vocab$vocabulary)
+```
+The Pearson correlation coefficient is .478, which suggests a moderately strong positive correlation between years of education and vocab words correct.
+
+#### Hypothesis Testing
+
+The null hypothesis indicates that the correlation between years of education and number of vocabulary words falls in the range of sampling error. The alternative hypothesis suggests the correlation is statistically signifcant, and cannot be explained by sampling error alone. The p-value threshold I am using is .05. If the p-value is below .05, the results are statistically signifcant, and education is correlated with vocabulary words answered.
+
+
+```{r}
+cor.test(vocab$education, vocab$vocabulary)
+```
+The p-value is very small, even below .01. It is virtually certain that vocabulary is moderately positively correlated with education. 
+
+#### T-Test
+
+Now I want to test for the mean education level of respondents. I want to see how likely it is that this sample mean is equal to the mean of the U.S. population. The data consists of 40 years, but I am only going to test the year 2016.
+
+```{r}
+twentySixteen <- filter(vocab, year == 2016)
+sampleMean <- mean(twentySixteen$education)
+```
+I am using a one-sample t-test. My hypothesis is testing the likelihood that the mean number of years of education of my sample corresponds to the mean U.S. population. The null hypothesis is that it is unknown is if the sampling mean is representative of the population mean (Sampling error can account for this) and the alternative hypothesis is that the sample mean is not equal to the population mean (Sampling error cannot account for this). For the null hypothesis to be rejected, p<.05. 
+
+```{r}
+t.test(vocab$education, mu=sampleMean)
+```
+The null hypothesis is rejected.  This essentially states that the population mean does not exactly equal the sample mean. However, there is 95% confidence that the population mean years of education is between 12.999 and 13.068. This suggests the population mean is very likely around 13 years of education.
+
+Ignoring the decimal places, the sample mean is representative of the population mean. Is there a way to modify the t-test to less significant digits?

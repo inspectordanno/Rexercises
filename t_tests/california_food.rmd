@@ -1,0 +1,69 @@
+---
+title: "Correlations and T Tests"
+output: html_notebook
+---
+### R analysis by Dan Spector
+
+#### This is a dataset from California Health and Human Services about food affordability in Californian female-headed households with children. 
+
+```{r, echo=TRUE, include=FALSE}
+food_data <- read.csv("https://data.chhs.ca.gov/dataset/0114f5bb-4975-419d-95d9-5f0179a8de06/resource/916e2a2e-383b-4af5-9f5b-310500961cb5/download/food-affordability-2006-2010.csv")
+library(tidyverse)
+str(food_data)
+```
+
+```{r}
+filtered_data <- filter(food_data, geoname != "California" & race_eth_name != "Total")
+```
+
+#### Correlation
+First, I will investigate if there is a correlation between the median household income field of African-American and Latino households.
+```{r}
+afr <- filter(filtered_data, race_eth_name == "AfricanAm")
+latino <- filter(filtered_data, race_eth_name =="Latino")
+
+##omitting the NA values
+afrFiltered <- na.omit(afr$median_income)
+latinoFiltered <- na.omit(latino$median_income)
+
+
+
+##these vectors are of different lengths, so I'm only using the first 200 entries for each.
+cor(afrFiltered[1:200], latinoFiltered[1:200])
+```
+
+The Pearson correlation coefficient is 0.15. Since 0 is no correlation and 1 is total positive correlation, African-American and Latino households seem to have a very weak positive correlation.
+
+Now, I will check if the correlation is statistically significant.
+
+```{r}
+cor.test(afrFiltered[1:200], latinoFiltered[1:200])
+```
+The p-value is under 0.05, so this correlation is statistically significant. The alterative hypothesis suggests that the true population correlation is not equal to 0.
+
+I'm not quite sure what to conclude. I definitely do not think there is a causal relationship between African-American and Latino incomes. Maybe there is a just a very weak correlation between these two groups. Each row represents a city in California, so it might make sense that there might be some very week correlation of the groups in each city.
+
+#### T-Test
+
+The t-test will take the mean from a random sample of 200 values from the cost of food food per year category, and compare it with the population mean of the cost of food per year. Because I am comparing a sample mean with a population mean, I will use the 1-sample t-test.
+
+```{r}
+
+##this is the population, NAs omitted
+population <- na.omit(filtered_data$cost_yr)
+
+sample <- sample(population, 200)
+
+##mean of population
+popMean <- mean(population)
+
+popMean
+
+##1-sample t-test, mu is mean of the population
+
+t.test(sample, mu = popMean)
+
+```
+I reran this code block many times in r studio to simulate a sampling distribution. In most cases, the p-value is well over .05, and the alternative hypothesis (that the population mean is not equal to 7268.952) is only rarely supported. In this particular instance, the p-value is .96, suggesting the null hypotheses is supported and the population mean does equal itself.
+
+For this sample, there is 95 percent confidence that the population mean is between 7038.5 and 7489.8. The population mean is between these values.
