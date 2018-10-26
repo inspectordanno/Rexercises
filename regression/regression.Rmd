@@ -1,0 +1,16 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+###Part One
+
+```{r, echo=TRUE, include=FALSE}
+library('tidyverse')
+nutrition <- read.csv('Food_Display_Table.csv')
+```
+
+```{r}
+ggplot(nutrition, aes(x=Milk, y=Solid_Fats)) + geom_point()
+```
+
