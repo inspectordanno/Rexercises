@@ -3,14 +3,59 @@ title: "R Notebook"
 output: html_notebook
 ---
 
-###Part One
+### Part One
 
 ```{r, echo=TRUE, include=FALSE}
 library('tidyverse')
 nutrition <- read.csv('Food_Display_Table.csv')
 ```
 
+I am checking to see if there is a correlation between the number of servings of dairy (this is denoted in the data as milk, so I am making an assumption), and calories from solid fat.
+
 ```{r}
 ggplot(nutrition, aes(x=Milk, y=Solid_Fats)) + geom_point()
+cor(nutrition$Milk, nutrition$Solid_Fats)
 ```
 
+There seems to be a modest positive correlation between servings of dairy and calories from solid fat. Now, I will build a linear regression model. The independent variable is servings of dairy, and the dependent variable are calories from fat. In another words, the amount of calories from fat is somehow affected by the number of servings of dairy.
+
+```{r}
+m1 <- lm(data=nutrition, Solid_Fats ~ Milk)
+summary(m1)
+plot(m1)
+```
+I'm not really sure how to interpret these results. It doesn't seem like there are any patterns.
+
+### Part Two
+
+I am comparing maternal mortality ratio with urban population.
+
+My alternative hypothesis is that mortality is inversely correlated with urban population. In other words, countries with higher urban populations would have lower numbers of infant mortality.
+
+The null hypothesis is that there is no correlation between mortality and urban population.
+
+A major limitation of this dataset is that these numbers are absolute, not percentages. I don't have the overall population of the countries, so I can't normalize the data in terms of percentage of the entire population. This will probably skew the results and make them less meaningful.
+
+```{r}
+maternal <- read.csv('maternal.csv')
+m <- maternal[complete.cases(maternal$X2000),]
+
+urban <- read.csv('urban.csv')
+u <- urban[complete.cases(urban$X2000),]
+
+mat <- data.frame(country = m$Country.Code, mort = m$X2000)
+urb <- data.frame(country = u$Country.Code, urb = u$X2000)
+
+combined <- merge(mat, urb, by="country")
+
+ggplot(data=combined, aes(x=urb, y=mort)) + geom_point()
+```
+This distribution suggests that most countries absolute mortality is between 0 and 1000. There are several countries with large urban populations and relatively lower mortality, which may represent richer, developed nations.
+
+
+```{r}
+m2 <- lm(data=combined, mort ~ urb)
+summary(m2)
+plot(m1)
+```
+There doesn't seem to be any correlations in the data, and thus the null hypothesis is not rejected. It would be helpful to normalize the data by percentage of the entire population and then rerun the analysis to see if there are any meaningful correlations.
